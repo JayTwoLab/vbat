@@ -31,20 +31,9 @@ encoding=UTF8
 우선순위는 `--encoding` 인자 → `.encoding` 사이드카 → 스크립트 기본값 순서입니다. (PowerShell/CMD 계열은 기본값이 CP949, 셸 스크립트는 기본값이 UTF-8)
 
 예시
-- 기본 동작으로 모든 `.txt` 파일 보기:
-  - `vbat.ps1 *.txt`
 - 특정 파일을 UTF-8로 보기:
   - `vbat.sh myfile.txt --encoding=UTF-8`
 - 짧은 플래그 사용 예:
-  - `vbat.cmd myfile.txt -e CP949`
-
-메모
-- `vbat.cmd`는 내부적으로 PowerShell을 호출하여 `vbat.ps1`과 동일한 동작을 수행합니다.
-- 셸 스크립트는 `iconv`를 사용해 인코딩을 UTF-8로 변환한 뒤 `bat`에 파이프합니다.
-- "unsupported encoding" 오류가 발생하면 플랫폼에 맞는 인코딩 지원을 설치하거나 다른 인코딩을 시도하세요.
-
-문제 해결
+  - `vbat.bat myfile.txt -e CP949`
+ 
 - `bat`이 `PATH`에 있는지 확인하세요.
-- Windows에서는 PowerShell 실행 정책에 따라 스크립트 실행이 제한될 수 있으니, 정책을 변경하거나 `vbat.cmd`를 사용하세요.
-
-자세한 구현은 각 스크립트 파일을 참고하세요.
