@@ -15,10 +15,7 @@ Requirements
 
 Quick usage
 - Windows (CMD):
-	- `vbat.cmd myfile.txt`
-- PowerShell:
-	- `.
-	vbat.ps1 myfile.txt` (or run `vbat.cmd` from CMD)
+	- `vbat.bat myfile.txt`
 - Bash (Linux/macOS):
 	- `./vbat.sh myfile.txt`
 

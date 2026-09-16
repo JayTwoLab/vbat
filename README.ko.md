@@ -14,9 +14,7 @@
    
 간단 사용법
 - Windows (CMD):
-  - `vbat.cmd myfile.txt`
-- PowerShell:
-  - `vbat.ps1 .\myfile.txt` (또는 CMD에서 `vbat.cmd` 실행)
+  - `vbat.bat myfile.txt`
 - Bash (Linux/macOS):
   - `vbat.sh myfile.txt`
 
