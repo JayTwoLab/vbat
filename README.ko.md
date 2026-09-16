@@ -5,8 +5,7 @@
 `bat`의 래퍼 스크립트로, 와일드카드와 다양한 문자 인코딩을 지원하여 텍스트 파일을 플랫폼 간에 보기 쉽게 만듭니다.
 
 지원 스크립트
-- `vbat.cmd` — Windows(CMD)에서 PowerShell을 호출하는 실행기
-- `vbat.ps1` — PowerShell 스크립트 (Windows)
+- `vbat.bat` — Windows(CMD) 호출하는 실행기
 - `vbat.sh`  — POSIX 셸 스크립트 (Linux/macOS)
 
 필수 구성 요소

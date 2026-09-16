@@ -6,8 +6,7 @@ Enhanced wrapper for `bat` that adds wildcard support and flexible
 encoding handling for viewing text files across platforms.
 
 Supported entrypoints
-- `vbat.cmd` — Windows (CMD) launcher that forwards to PowerShell
-- `vbat.ps1` — PowerShell script (Windows)
+- `vbat.cmd` — Windows (CMD) launcher
 - `vbat.sh`  — POSIX shell script (Linux/macOS)
 
 Requirements
