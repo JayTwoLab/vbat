@@ -6,7 +6,7 @@ Enhanced wrapper for `bat` that adds wildcard support and flexible
 encoding handling for viewing text files across platforms.
 
 Supported entrypoints
-- `vbat.cmd` — Windows (CMD) launcher
+- `vbat.bat` — Windows (CMD) launcher
 - `vbat.sh`  — POSIX shell script (Linux/macOS)
 
 Requirements
@@ -32,20 +32,9 @@ encoding=UTF8
 The scripts will prefer an explicit `--encoding` argument, then a `.encoding` sidecar, and finally fall back to a sensible default (PowerShell/CMD variants default to CP949; the shell script defaults to UTF-8).
 
 Examples
-- View all `.txt` files with default behavior:
-	- `vbat.ps1 *.txt`
 - Force UTF-8 for a single file:
 	- `vbat.sh myfile.txt --encoding=UTF-8`
 - Use short flag:
-	- `vbat.cmd myfile.txt -e CP949`
+	- `vbat.bat myfile.txt -e CP949`
 
-Notes
-- The Windows `vbat.cmd` is a tiny launcher that invokes PowerShell with the same logic as `vbat.ps1`.
-- The shell script uses `iconv` to convert encodings before piping into `bat`.
-- If you see an "unsupported encoding" error, either install the required encoding support (platform-specific) or use a different encoding value.
-
-Troubleshooting
-- Ensure `bat` is on your `PATH` and callable as `bat`.
-- On Windows, run PowerShell scripts according to your execution policy, or use `vbat.cmd` to avoid changing policies.
-
-See the individual scripts for full implementation details.
+ 
