@@ -1,25 +1,48 @@
 #!/usr/bin/env bash
 
-# vbat.sh: Enhanced bat wrapper for Bash environments
-# Supports wildcards, custom encodings, and .encoding sidecar files.
-# Default encoding is strictly set to UTF-8.
+# --- Check for bat command ---
+BAT_CMD="bat"
+if ! command -v "$BAT_CMD" &> /dev/null; then
+    # On Debian/Ubuntu, it may be installed as 'batcat' due to a package name conflict
+    if command -v "batcat" &> /dev/null; then
+        BAT_CMD="batcat"
+    else
+        echo "Error: 'bat' (or 'batcat') is not installed or not in PATH." >&2
+        exit 1
+    fi
+fi
 
+# --- Automatic encoding detection function (UTF-8 vs CP949) ---
+detect_encoding() {
+    local target_file="$1"
+    
+    # If the file is 0 bytes, treat it as UTF-8 by default
+    if [ ! -s "$target_file" ]; then
+        echo "UTF-8"
+        return
+    fi
+
+    # 1. Strictly validate if the file is valid UTF-8 using iconv
+    if iconv -f UTF-8 -t UTF-8 "$target_file" >/dev/null 2>&1; then
+        echo "UTF-8"
+    else
+        # 2. If it contains invalid UTF-8 byte sequences, fallback to CP949
+        echo "CP949"
+    fi
+}
+
+# --- Show help usage ---
 show_help() {
     echo "Usage:"
-    echo "  ./vbat.sh [filename/pattern] [--encoding=value] [-e value]"
-    echo ""
-    echo "Options:"
-    echo "  -h, --help           Show this help message"
-    echo "  -e, --encoding=      Specify file encoding (e.g., UTF-8, CP949, EUC-KR)"
-    echo "                       (Defaults to UTF-8 if omitted)"
+    echo "  vbat.sh [filename/pattern] [--encoding=value] [-e value]"
     exit 0
 }
 
+# --- Parse arguments ---
 file_pattern=""
 enc_override=""
 
-# 1. Parse Arguments Safely
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help)
             show_help
@@ -29,11 +52,11 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -e|--encoding)
-            if [[ -n "$2" && "$2" != -* ]]; then
+            if [ -n "$2" ]; then
                 enc_override="$2"
                 shift 2
             else
-                echo "Error: Argument for $1 is missing." >&2
+                echo "Error: Missing argument for $1" >&2
                 exit 1
             fi
             ;;
@@ -44,56 +67,67 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# 2. Validation: Check Missing Path
-if [[ -z "$file_pattern" ]]; then
-    echo "Error: Missing filename or pattern. Type \`./vbat.sh -h\` for help." >&2
+if [ -z "$file_pattern" ]; then
+    echo "Error: Missing filename or pattern. Type 'vbat.sh -h' for help." >&2
     exit 1
 fi
 
-# 3. Process Files (Handles Wildcards natively via Bash Expansion)
+# --- Retrieve file list (supports wildcard patterns) ---
+# Prevent unexpanded wildcards from returning literal pattern string
 shopt -s nullglob
 files=($file_pattern)
 shopt -u nullglob
 
-if [[ ${#files[@]} -eq 0 ]]; then
-    echo "Error: File(s) not found: $file_pattern" >&2
+if [ ${#files[@]} -eq 0 ]; then
+    echo "File(s) not found: $file_pattern" >&2
     exit 1
 fi
 
-for file in "${files[@]}"; do
-    if [[ ! -f "$file" ]]; then
+# --- Process encoding per file and execute bat ---
+for f in "${files[@]}"; do
+    if [ ! -f "$f" ]; then
         continue
     fi
 
-    $current_enc="UTF-8" # Default Fallback
+    current_enc=""
 
-    if [[ -n "$enc_override" ]]; then
+    # 1) Check command-line override option
+    if [ -n "$enc_override" ]; then
         current_enc="$enc_override"
     else
-        meta_file="${file}.encoding"
-        if [[ -f "$meta_file" ]]; then
-            while IFS= read -r line || [[ -n "$line" ]]; do
-                if [[ "$line" =~ ^[[:space:]]*encoding[[:space:]]*=[[:space:]]*(.+)$ ]]; then
-                    current_enc=$(echo "${BASH_REMATCH[1]}" | xargs)
-                    break
-                fi
-            done < "$meta_file"
+        # 2) Check for adjacent .encoding metadata file
+        meta_file="${f}.encoding"
+        if [ -f "$meta_file" ]; then
+            # Parse 'encoding=value'
+            matched_val=$(grep -E '^[[:space:]]*encoding[[:space:]]*=' "$meta_file" | head -n 1 | sed -E 's/^[[:space:]]*encoding[[:space:]]*=[[:space:]]*//;s/[[:space:]]*$//')
+            if [ -n "$matched_val" ]; then
+                current_enc="$matched_val"
+            fi
         fi
     fi
 
-    # Normalize Encoding Names for iconv compatibility
-    if [[ "${current_enc,,}" == "utf8" || "${current_enc,,}" == "default" ]]; then
-        current_enc="UTF-8"
+    # 3) Fallback to auto-detection if no encoding is explicitly specified
+    if [ -z "$current_enc" ]; then
+        current_enc=$(detect_encoding "$f")
     fi
 
-    # 4. Validate Encoding with iconv
-    if ! iconv -l | grep -qi "^${current_enc}$"; then
-        if ! iconv -f "$current_enc" -t UTF-8 <<< "" &>/dev/null; then
-            echo "Error: Unsupported encoding '$current_enc' for file $(basename "$file")" >&2
-            continue
+    # Standardize encoding aliases to uppercase
+    current_enc_upper=$(echo "$current_enc" | tr '[:lower:]' '[:upper:]')
+    case "$current_enc_upper" in
+        949|EUC-KR)
+            current_enc="CP949"
+            ;;
+        UTF8)
+            current_enc="UTF-8"
+            ;;
+    esac
+
+    # Display directly if UTF-8, otherwise convert to UTF-8 via iconv and pipe to bat
+    if [ "$current_enc_upper" = "UTF-8" ]; then
+        "$BAT_CMD" "$f"
+    else
+        if ! iconv -f "$current_enc" -t UTF-8 "$f" 2>/dev/null | "$BAT_CMD" --file-name "$(basename "$f")"; then
+            echo "Error: Failed to decode '$f' with encoding '$current_enc'" >&2
         fi
     fi
-
-    # 5. Read, Convert, and Pipeline to 'bat'
-    iconv -f "$current_enc" -t UTF-8 "$file" 2>/dev/null | bat --file-name "$(basename "$file")"
 done
